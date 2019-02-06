@@ -4,15 +4,14 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
+import android.os.Bundle;
 import android.support.annotation.Nullable;
-
 import com.bumptech.glide.Glide;
 import com.himanshu.cameraintegrator.*;
 import com.himanshu.cameraintegrator.executors.AppExecutors;
 
 import java.io.File;
 import java.util.concurrent.ExecutionException;
-
 
 
 /**
@@ -96,6 +95,19 @@ public abstract class Integrator {
             return null;
         }
     }
+
+    /**
+     * For Saving State in Case activity got destroyed by Android
+     *
+     * @param outState
+     */
+    abstract void saveState(Bundle outState);
+
+    /**
+     * For Restoring state in case of activity or fragment regenration
+     */
+    abstract void restoreState(Bundle savedInstanceState);
+
 
     /**
      * Calculates the size of final image size without distorting the aspect ratio of the image

@@ -7,6 +7,7 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.net.Uri;
 import android.os.Build;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
@@ -28,6 +29,12 @@ import java.io.IOException;
  * @Example
  */
 public class CameraIntegrator extends Integrator {
+
+    private static final String INTENT_EXTRA_FILE_COMPLETE_PATH = "complete_path";
+    private static final String INTENT_EXTRA_FILE_DIRECTORY_NAME = "camera_image_directory_name";
+    private static final String INTENT_EXTRA_FILE_IMAGE_NAME = "image_name";
+    private static final String INTENT_EXTRA_FILE_IMAGE_FORMAT = "format";
+    private static final String INTENT_EXTRA_FINAL_REQUIRED_SIZE = "camera_required_size";
 
     /**
      * Activity Context
@@ -173,6 +180,24 @@ public class CameraIntegrator extends Integrator {
                 getParsedBitmapResult(mFile, null, RequestSource.SOURCE_CAMERA, requiredImageSize, resultCallback);
             }
         }
+    }
+
+    @Override
+    void saveState(Bundle outState) {
+        outState.putString(INTENT_EXTRA_FILE_COMPLETE_PATH, imagePath);
+        outState.putString(INTENT_EXTRA_FILE_DIRECTORY_NAME, imageDirectoryName);
+        outState.putString(INTENT_EXTRA_FILE_IMAGE_FORMAT, imageFormat);
+        outState.putString(INTENT_EXTRA_FILE_IMAGE_NAME, imageName);
+        outState.putInt(INTENT_EXTRA_FINAL_REQUIRED_SIZE, requiredImageSize);
+    }
+
+    @Override
+    void restoreState(Bundle savedInstanceState) {
+        imagePath = savedInstanceState.getString(INTENT_EXTRA_FILE_COMPLETE_PATH, null);
+        imageDirectoryName = savedInstanceState.getString(INTENT_EXTRA_FILE_DIRECTORY_NAME, null);
+        imageFormat = savedInstanceState.getString(INTENT_EXTRA_FILE_IMAGE_FORMAT, null);
+        imageName = savedInstanceState.getString(INTENT_EXTRA_FILE_IMAGE_NAME, null);
+        requiredImageSize = savedInstanceState.getInt(INTENT_EXTRA_FINAL_REQUIRED_SIZE, -1);
     }
 
 }

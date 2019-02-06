@@ -8,16 +8,16 @@ import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.net.Uri;
+import android.os.Bundle;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
-
-import java.io.File;
-
 import android.support.v4.content.ContextCompat;
 import com.himanshu.cameraintegrator.ImageCallback;
 import com.himanshu.cameraintegrator.ImagesSizes;
 import com.himanshu.cameraintegrator.RequestSource;
 import com.himanshu.cameraintegrator.exceptions.RuntimePermissionNotGrantedException;
+
+import java.io.File;
 
 
 /**
@@ -25,6 +25,10 @@ import com.himanshu.cameraintegrator.exceptions.RuntimePermissionNotGrantedExcep
  */
 
 public class GalleryIntegrator extends Integrator {
+
+
+    private static final String INTENT_EXTRA_FILE_DIRECTORY_NAME = "gallery_image_directory_name";
+    private static final String INTENT_EXTRA_FINAL_REQUIRED_SIZE = "gallery_required_size";
 
     /**
      * Activity Context
@@ -81,7 +85,7 @@ public class GalleryIntegrator extends Integrator {
         checkForStoragePermissions();
 
         Intent intent = new Intent(Intent.ACTION_PICK);
-        intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI,"image/*");
+        intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
 
         if (fragmentReference == null)
             activityRef.startActivityForResult(intent, REQUEST_IMAGE_PICK);
@@ -91,11 +95,11 @@ public class GalleryIntegrator extends Integrator {
 
     }
 
-    private void checkForStoragePermissions() throws RuntimePermissionNotGrantedException{
+    private void checkForStoragePermissions() throws RuntimePermissionNotGrantedException {
 
-        Context context = (fragmentReference != null ) ? fragmentReference.getContext() : activityRef;
+        Context context = (fragmentReference != null) ? fragmentReference.getContext() : activityRef;
 
-        if(context == null)
+        if (context == null)
             throw new IllegalStateException("Context cannot be null");
 
         if (ContextCompat.checkSelfPermission(context, Manifest.permission_group.STORAGE) != PackageManager.PERMISSION_GRANTED) {
@@ -119,6 +123,18 @@ public class GalleryIntegrator extends Integrator {
             }
         }
 
+    }
+
+    @Override
+    void saveState(Bundle outState) {
+        outState.putString(INTENT_EXTRA_FILE_DIRECTORY_NAME, imageDirectoryName);
+        outState.putInt(INTENT_EXTRA_FINAL_REQUIRED_SIZE, requiredImageSize);
+    }
+
+    @Override
+    void restoreState(Bundle savedInstanceState) {
+        imageDirectoryName = savedInstanceState.getString(INTENT_EXTRA_FILE_DIRECTORY_NAME, null);
+        requiredImageSize = savedInstanceState.getInt(INTENT_EXTRA_FINAL_REQUIRED_SIZE, -1);
     }
 
 
