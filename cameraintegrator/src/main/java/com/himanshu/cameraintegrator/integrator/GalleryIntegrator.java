@@ -102,7 +102,9 @@ public class GalleryIntegrator extends Integrator {
         if (context == null)
             throw new IllegalStateException("Context cannot be null");
 
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission_group.STORAGE) != PackageManager.PERMISSION_GRANTED) {
+        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+                || ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
+        ) {
             throw new RuntimePermissionNotGrantedException("storage permission not granted");
         }
 
