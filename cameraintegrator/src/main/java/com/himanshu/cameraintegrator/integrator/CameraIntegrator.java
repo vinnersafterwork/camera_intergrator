@@ -185,7 +185,7 @@ public class CameraIntegrator extends Integrator {
     }
 
     @Override
-    void saveState(Bundle outState) {
+    public void saveState(Bundle outState) {
         outState.putString(INTENT_EXTRA_FILE_COMPLETE_PATH, imagePath);
         outState.putString(INTENT_EXTRA_FILE_DIRECTORY_NAME, imageDirectoryName);
         outState.putString(INTENT_EXTRA_FILE_IMAGE_FORMAT, imageFormat);
@@ -194,7 +194,7 @@ public class CameraIntegrator extends Integrator {
     }
 
     @Override
-    void restoreState(Bundle savedInstanceState) {
+    public void restoreState(Bundle savedInstanceState) {
         imagePath = savedInstanceState.getString(INTENT_EXTRA_FILE_COMPLETE_PATH, null);
         imageDirectoryName = savedInstanceState.getString(INTENT_EXTRA_FILE_DIRECTORY_NAME, null);
         imageFormat = savedInstanceState.getString(INTENT_EXTRA_FILE_IMAGE_FORMAT, null);
