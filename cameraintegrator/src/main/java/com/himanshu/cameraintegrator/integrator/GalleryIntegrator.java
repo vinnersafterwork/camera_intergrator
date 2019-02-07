@@ -128,13 +128,13 @@ public class GalleryIntegrator extends Integrator {
     }
 
     @Override
-    void saveState(Bundle outState) {
+    public void saveState(Bundle outState) {
         outState.putString(INTENT_EXTRA_FILE_DIRECTORY_NAME, imageDirectoryName);
         outState.putInt(INTENT_EXTRA_FINAL_REQUIRED_SIZE, requiredImageSize);
     }
 
     @Override
-    void restoreState(Bundle savedInstanceState) {
+    public void restoreState(Bundle savedInstanceState) {
         imageDirectoryName = savedInstanceState.getString(INTENT_EXTRA_FILE_DIRECTORY_NAME, null);
         requiredImageSize = savedInstanceState.getInt(INTENT_EXTRA_FINAL_REQUIRED_SIZE, -1);
     }

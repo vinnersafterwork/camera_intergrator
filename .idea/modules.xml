@@ -4,6 +4,7 @@
     <modules>
       <module fileurl="file://$PROJECT_DIR$/CameraIntegrator.iml" filepath="$PROJECT_DIR$/CameraIntegrator.iml" />
       <module fileurl="file://$PROJECT_DIR$/app/app.iml" filepath="$PROJECT_DIR$/app/app.iml" />
+      <module fileurl="file://$PROJECT_DIR$/camera_intergrator.iml" filepath="$PROJECT_DIR$/camera_intergrator.iml" />
       <module fileurl="file://$PROJECT_DIR$/cameraintegrator/cameraintegrator.iml" filepath="$PROJECT_DIR$/cameraintegrator/cameraintegrator.iml" />
     </modules>
   </component>

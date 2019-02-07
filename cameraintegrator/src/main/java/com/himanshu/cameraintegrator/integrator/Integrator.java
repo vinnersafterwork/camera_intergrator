@@ -101,12 +101,12 @@ public abstract class Integrator {
      *
      * @param outState
      */
-    abstract void saveState(Bundle outState);
+    public abstract void saveState(Bundle outState);
 
     /**
      * For Restoring state in case of activity or fragment regenration
      */
-    abstract void restoreState(Bundle savedInstanceState);
+    public abstract void restoreState(Bundle savedInstanceState);
 
 
     /**
