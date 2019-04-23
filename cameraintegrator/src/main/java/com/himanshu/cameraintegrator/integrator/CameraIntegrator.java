@@ -13,9 +13,13 @@ import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
-import com.himanshu.cameraintegrator.*;
+import com.himanshu.cameraintegrator.ImageCallback;
+import com.himanshu.cameraintegrator.ImageFormats;
+import com.himanshu.cameraintegrator.ImagesSizes;
+import com.himanshu.cameraintegrator.RequestSource;
 import com.himanshu.cameraintegrator.exceptions.CameraActivityNotFoundException;
 import com.himanshu.cameraintegrator.exceptions.RuntimePermissionNotGrantedException;
+import com.himanshu.cameraintegrator.storage.ImageStorageHelper;
 
 import java.io.File;
 import java.io.IOException;
@@ -88,15 +92,6 @@ public class CameraIntegrator extends Integrator {
         this.imagePath = imagePath;
     }
 
-    /**
-     * Setting the file where image will be stores
-     *
-     * @param mFile
-     */
-    public void setFile(File mFile) {
-        this.mFile = mFile;
-    }
-
     public void setImageDirectoryName(String directoryName) {
         this.imageDirectoryName = directoryName;
     }
@@ -119,17 +114,34 @@ public class CameraIntegrator extends Integrator {
     public void initiateCapture() throws CameraActivityNotFoundException, IOException, RuntimePermissionNotGrantedException {
 
         // checking if storage permissions are granted or not if not then a RuntimePermissionNotGrantedException is thrown
-        checkForStoragePermissions();
+        //checkForStoragePermissions();
 
         //Lets create a file if user hasn't created one where image will be stored
         if (imagePath != null)
             mFile = new File(imagePath);
-        else if (imageDirectoryName != null && imageName == null && imageFormat == null)
-            mFile = ImageHelper.createImageFile(imageDirectoryName);
-        else if (imageDirectoryName != null && imageName != null && imageFormat == null)
-            mFile = ImageHelper.createImageFile(imageDirectoryName, imageName);
-        else if (imageDirectoryName != null && imageName != null && imageFormat != null)
-            mFile = ImageHelper.createImageFile(imageDirectoryName, imageName, imageFormat);
+        else {
+
+            switch (storageMode) {
+                case INTERNAL_CACHE_STORAGE:
+                    mFile = ImageStorageHelper.createCacheImageFile(activityReference.getApplicationContext());
+                    break;
+
+                case INTERNAL_STORAGE:
+                    mFile = ImageStorageHelper.createInternalImageFile(activityReference.getApplicationContext());
+                    break;
+
+                case EXTERNAL_PUBLIC_STORAGE:
+
+                    if (imageDirectoryName != null && imageName != null && imageFormat == null)
+                        mFile = ImageStorageHelper.createImageFile(imageDirectoryName, imageName);
+                    else if (imageDirectoryName != null && imageName != null && imageFormat != null)
+                        mFile = ImageStorageHelper.createImageFile(imageDirectoryName, imageName, imageFormat);
+
+                    break;
+
+            }
+        }
+
 
         if (mFile == null)
             throw new IOException("Details Where image should be stored are not provided, you can call ");
@@ -150,10 +162,10 @@ public class CameraIntegrator extends Integrator {
 
                 cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-                if (fragmentReference == null)
-                    activityReference.startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
-                else
-                    fragmentReference.startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
+//                if (fragmentReference == null)
+//                    activityReference.startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
+//                else
+//                    fragmentReference.startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
 
             }
         } else throw new CameraActivityNotFoundException("No Camera App found to initiate capture");
@@ -177,11 +189,11 @@ public class CameraIntegrator extends Integrator {
     @Override
     public void parseResults(int requestCode, int resultCode, Intent data, ImageCallback resultCallback) {
 
-        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
-            if (mFile != null) {
-                getParsedBitmapResult(mFile, null, RequestSource.SOURCE_CAMERA, requiredImageSize, resultCallback);
-            }
-        }
+//        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
+//            if (mFile != null) {
+//                getParsedBitmapResult(mFile, null, RequestSource.SOURCE_CAMERA, requiredImageSize, resultCallback);
+//            }
+//        }
     }
 
     @Override

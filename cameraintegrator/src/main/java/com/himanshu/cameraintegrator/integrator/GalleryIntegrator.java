@@ -7,17 +7,24 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.pm.PackageManager;
 import android.database.Cursor;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import com.himanshu.cameraintegrator.ImageCallback;
 import com.himanshu.cameraintegrator.ImagesSizes;
 import com.himanshu.cameraintegrator.RequestSource;
+import com.himanshu.cameraintegrator.Result;
 import com.himanshu.cameraintegrator.exceptions.RuntimePermissionNotGrantedException;
+import com.himanshu.cameraintegrator.storage.ImageStorageHelper;
+import com.himanshu.cameraintegrator.storage.StorageHelper;
+import com.himanshu.cameraintegrator.storage.StorageMode;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 
 
 /**
@@ -25,6 +32,12 @@ import java.io.File;
  */
 
 public class GalleryIntegrator extends Integrator {
+
+
+    /**
+     * Constant to be used for identifying image pick action
+     */
+    public static final int REQUEST_IMAGE_PICK = 2;
 
 
     private static final String INTENT_EXTRA_FILE_DIRECTORY_NAME = "gallery_image_directory_name";
@@ -36,13 +49,30 @@ public class GalleryIntegrator extends Integrator {
     private Activity activityRef;
 
     /**
-     * Refrence of calling Activity
+     * Reference of calling Activity
      */
     private Fragment fragmentReference;
+
     /**
-     * File instance on which we will be operating
+     * Public Directory Name it can be
+     * <ul>
+     * <li>{@link Environment#DIRECTORY_MUSIC}</li>
+     * <li>{@link Environment#DIRECTORY_PODCASTS}</li>
+     * <li>{@link Environment#DIRECTORY_RINGTONES}</li>
+     * <li>{@link Environment#DIRECTORY_ALARMS}</li>
+     * <li>{@link Environment#DIRECTORY_NOTIFICATIONS}</li>
+     * <li>{@link Environment#DIRECTORY_PICTURES}</li>     *
+     * <li>{@link Environment#DIRECTORY_MOVIES}</li>
+     * <li>{@link Environment#DIRECTORY_DOWNLOADS}</li>
+     * <li>{@link Environment#DIRECTORY_DCIM}</li>
+     * <li>{@link Environment#DIRECTORY_DOCUMENTS}</li>     *
+     * </ul>
      */
-    private File mFile;
+    private String publicDirectoryName;
+
+    /**
+     * Directory Name Where Image will be kept
+     */
     private String imageDirectoryName;
 
 
@@ -51,6 +81,7 @@ public class GalleryIntegrator extends Integrator {
      * this can be one of the {@link ImagesSizes}
      */
     private int requiredImageSize;
+    private Context mContext;
 
     /**
      * @param activityRef path where the new image we clicked should be stored
@@ -70,6 +101,26 @@ public class GalleryIntegrator extends Integrator {
         this.requiredImageSize = requiredImageSize;
     }
 
+    /**
+     * Sets Public Directory Name
+     *
+     * @param publicDirectoryName it can be
+     *                            <ul>
+     *                            <li>{@link Environment#DIRECTORY_MUSIC}</li>
+     *                            <li>{@link Environment#DIRECTORY_PODCASTS}</li>
+     *                            <li>{@link Environment#DIRECTORY_RINGTONES}</li>
+     *                            <li>{@link Environment#DIRECTORY_ALARMS}</li>
+     *                            <li>{@link Environment#DIRECTORY_NOTIFICATIONS}</li>
+     *                            <li>{@link Environment#DIRECTORY_PICTURES}</li>
+     *                            <li>{@link Environment#DIRECTORY_MOVIES}</li>
+     *                            <li>{@link Environment#DIRECTORY_DOWNLOADS}</li>
+     *                            <li>{@link Environment#DIRECTORY_DCIM}</li>
+     *                            <li>{@link Environment#DIRECTORY_DOCUMENTS}</li>
+     *                            </ul>
+     */
+    public void setPublicDirectoryName(String publicDirectoryName) {
+        this.publicDirectoryName = publicDirectoryName;
+    }
 
     public void setImageDirectoryName(String directoryName) {
         this.imageDirectoryName = directoryName;
@@ -82,7 +133,13 @@ public class GalleryIntegrator extends Integrator {
      */
     public void initiateImagePick() throws ActivityNotFoundException, RuntimePermissionNotGrantedException {
 
-        checkForStoragePermissions();
+        mContext = (fragmentReference != null) ? fragmentReference.getContext() : activityRef;
+
+        checkForReadStoragePermissions();
+
+        if (storageMode == StorageMode.EXTERNAL_CACHE_STORAGE || storageMode == StorageMode.EXTERNAL_PUBLIC_STORAGE) {
+            checkForWriteStoragePermissions();
+        }
 
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
@@ -95,17 +152,24 @@ public class GalleryIntegrator extends Integrator {
 
     }
 
-    private void checkForStoragePermissions() throws RuntimePermissionNotGrantedException {
+    private void checkForReadStoragePermissions() throws RuntimePermissionNotGrantedException {
 
-        Context context = (fragmentReference != null) ? fragmentReference.getContext() : activityRef;
-
-        if (context == null)
+        if (mContext == null)
             throw new IllegalStateException("Context cannot be null");
 
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-        ) {
-            throw new RuntimePermissionNotGrantedException("storage permission not granted");
+        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            throw new RuntimePermissionNotGrantedException("read storage permission not granted");
+        }
+
+    }
+
+    private void checkForWriteStoragePermissions() throws RuntimePermissionNotGrantedException {
+
+        if (mContext == null)
+            throw new IllegalStateException("Context cannot be null");
+
+        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            throw new RuntimePermissionNotGrantedException("read storage permission not granted");
         }
 
     }
@@ -118,9 +182,83 @@ public class GalleryIntegrator extends Integrator {
 
             if (selectedImageUri != null) {
                 String imagePath = getRealPathFromURI(activityRef, selectedImageUri);
+
                 if (imagePath != null) {
-                    mFile = new File(imagePath);
-                    getParsedBitmapResult(mFile, imageDirectoryName, RequestSource.SOURCE_GALLERY, requiredImageSize, resultCallback);
+
+
+                    taskExecutors.diskIO().execute(new Runnable() {
+                        @Override
+                        public void run() {
+
+                            //Reference to file picked By User
+                            File mFile = new File(imagePath);
+                            File destFile = null;
+
+                            switch (storageMode) {
+                                case INTERNAL_STORAGE:
+
+                                    //Creating A File In Internal Storage which app will use
+                                    destFile = ImageStorageHelper.createInternalImageFile(mContext, mFile.getName());
+                                    break;
+
+                                case INTERNAL_CACHE_STORAGE:
+
+                                    //Creating A File In Internal Storage which app will use
+                                    destFile = ImageStorageHelper.createCacheImageFile(mContext, mFile.getName());
+                                    break;
+
+                                case EXTERNAL_CACHE_STORAGE:
+
+                                    //Creating A File In Internal Storage which app will use
+                                    destFile = ImageStorageHelper.createExternalCacheImageFile(mContext, mFile.getName());
+                                    break;
+
+                                case EXTERNAL_PUBLIC_STORAGE: {
+
+                                    File storageDir;
+
+                                    // Getting a reference to Target storage directory
+                                    if (publicDirectoryName != null) {
+
+                                        if (imageDirectoryName != null)
+                                            storageDir = Environment.getExternalStoragePublicDirectory(publicDirectoryName + "/" + imageDirectoryName);
+                                        else
+                                            storageDir = Environment.getExternalStoragePublicDirectory(publicDirectoryName);
+
+                                    } else
+                                        storageDir = Environment.getExternalStoragePublicDirectory(imageDirectoryName);
+
+                                    // Creating directory if not made already
+
+                                    if (!storageDir.exists())
+                                        storageDir.mkdirs();
+
+                                    destFile = new File(storageDir, mFile.getName());
+                                }
+                            }
+
+                            Bitmap requiredSizeImage;
+                            try {
+                                requiredSizeImage = getBitmapInRequiredSize(mFile, requiredImageSize);
+                            } catch (
+                                    FileNotFoundException e) {
+                                resultCallback.onResult(RequestSource.SOURCE_GALLERY, null, e);
+                                return;
+                            }
+
+                            /*
+                             * Saving the Bitmap of required size to the required directory
+                             */
+                            ImageStorageHelper.saveTo(destFile, requiredSizeImage);
+
+                            Result results = getResults(destFile, requiredSizeImage, RequestSource.SOURCE_GALLERY);
+                            taskExecutors.mainThread().
+
+                                    execute(() -> resultCallback.onResult(RequestSource.SOURCE_GALLERY, results, null));
+
+                        }
+                    });
+
                 }
             }
         }

@@ -7,10 +7,15 @@ import android.graphics.BitmapFactory;
 import android.os.Bundle;
 import android.support.annotation.Nullable;
 import com.bumptech.glide.Glide;
-import com.himanshu.cameraintegrator.*;
+import com.himanshu.cameraintegrator.ImageCallback;
+import com.himanshu.cameraintegrator.ImagesSizes;
+import com.himanshu.cameraintegrator.RequestSource;
+import com.himanshu.cameraintegrator.Result;
 import com.himanshu.cameraintegrator.executors.AppExecutors;
+import com.himanshu.cameraintegrator.storage.StorageMode;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.concurrent.ExecutionException;
 
 
@@ -19,28 +24,26 @@ import java.util.concurrent.ExecutionException;
  */
 public abstract class Integrator {
 
-    /**
-     * Constant to be used for identifying image capture action
-     */
-    public static final int REQUEST_IMAGE_CAPTURE = 1;
 
-    /**
-     * Constant to be used for identifying image pick action
-     */
-    public static final int REQUEST_IMAGE_PICK = 2;
-    Result imageCaptureResult;
+    private Result imageCaptureResult;
     /**
      * {@link AppExecutors} for switching threads
      */
-    private AppExecutors taskExecutors;
+    protected AppExecutors taskExecutors;
     /**
      * Context of calling activity
      */
     private Context context;
 
+    protected StorageMode storageMode = StorageMode.INTERNAL_STORAGE;
+
     public Integrator(Context context) {
         this.context = context;
         taskExecutors = AppExecutors.getInstance();
+    }
+
+    public void setStorageMode(StorageMode storageMode) {
+        this.storageMode = storageMode;
     }
 
     /**
@@ -170,49 +173,47 @@ public abstract class Integrator {
         return finalImageSize;
     }
 
-    protected void getParsedBitmapResult(File mFile, @Nullable String targetFolderName, @RequestSource.RequestSourceOptions final int source, final int requiredImageSize, final ImageCallback callback) {
+    /**
+     * Reads Bitmap from storage
+     *
+     * @param mFile             file to read
+     * @param requiredImageSize size of required image
+     * @return image in required size
+     * @throws FileNotFoundException file not found
+     */
+    protected Bitmap getBitmapInRequiredSize(File mFile,
+                                             final int requiredImageSize) throws FileNotFoundException {
 
-        Runnable getImageInfoTask = () -> {
+        if (!mFile.exists())
+            throw new FileNotFoundException("file not found" + mFile.getAbsolutePath());
 
-            //Reading data About the File
-            BitmapFactory.Options sourceImageData = getImageMetaData(mFile);
+        //Reading data About the File
+        BitmapFactory.Options sourceImageData = getImageMetaData(mFile);
 
-            //Bitmap Of Requried Size
-            final Bitmap requiredSizeImage = getRequiredSizeImage(mFile, sourceImageData, requiredImageSize);
+        //Bitmap Of Requried Size
+        return getRequiredSizeImage(mFile, sourceImageData, requiredImageSize);
+    }
 
-            //Creating A Copy Of Selected File In Case of Gallery Pick
-            //and replacing the large file with small file in Camera Capture
+    /**
+     * Prepares {@link Result} for delivering to user
+     *
+     * @param mFile file where image is saved
+     * @param image image file
+     * @param source request source
+     * @return
+     */
+    protected Result getResults(File mFile,
+                                Bitmap image,
+                                @RequestSource.RequestSourceOptions final int source) {
 
-            imageCaptureResult = new Result();
-            imageCaptureResult.setWidth(requiredSizeImage.getWidth());
-            imageCaptureResult.setHeight(requiredSizeImage.getHeight());
-            imageCaptureResult.setBitmap(requiredSizeImage);
-
-            if (source == RequestSource.SOURCE_CAMERA) {
-
-                //Replacing the Original Large File captured By the camera
-                //with the size of file we needed
-                ImageHelper.saveTo(mFile.getAbsolutePath(), requiredSizeImage);
-                imageCaptureResult.setImageName(mFile.getName());
-                imageCaptureResult.setImagePath(mFile.getAbsolutePath());
-                imageCaptureResult.setFileSizeInMb(mFile.length() / (1024 * 1024));
-
-            } else if (source == RequestSource.SOURCE_GALLERY) {
-
-                //Creating A Copy of required Size Image File
-                //and then storing it in required folder
-                File galleryPickedFile = ImageHelper.createImageFile(targetFolderName);
-                ImageHelper.saveTo(galleryPickedFile.getAbsolutePath(), requiredSizeImage);
-                imageCaptureResult.setImageName(galleryPickedFile.getName());
-                imageCaptureResult.setImagePath(galleryPickedFile.getAbsolutePath());
-                imageCaptureResult.setFileSizeInMb(galleryPickedFile.length() / (1024 * 1024));
-            }
-
-            taskExecutors.mainThread().execute(() -> callback.onResult(source, imageCaptureResult));
-        };
-
-        taskExecutors.diskIO().execute(getImageInfoTask);
-
+        Result imageResults = new Result();
+        imageResults.setWidth(image.getWidth());
+        imageResults.setHeight(image.getHeight());
+        imageResults.setBitmap(image);
+        imageResults.setImageName(mFile.getName());
+        imageResults.setImagePath(mFile.getAbsolutePath());
+        imageResults.setFileSizeInMb(mFile.length() / (1024 * 1024));
+        return imageResults;
     }
 
 
