@@ -12,6 +12,7 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import com.himanshu.cameraintegrator.ImageCallback;
@@ -80,8 +81,8 @@ public class GalleryIntegrator extends Integrator {
      * Required Size of the image
      * this can be one of the {@link ImagesSizes}
      */
-    private int requiredImageSize;
-    private Context mContext;
+    private @NonNull
+    int requiredImageSize;
 
     /**
      * @param activityRef path where the new image we clicked should be stored
@@ -133,13 +134,11 @@ public class GalleryIntegrator extends Integrator {
      */
     public void initiateImagePick() throws ActivityNotFoundException, RuntimePermissionNotGrantedException {
 
-        mContext = (fragmentReference != null) ? fragmentReference.getContext() : activityRef;
-
         checkForReadStoragePermissions();
 
-        if (storageMode == StorageMode.EXTERNAL_CACHE_STORAGE || storageMode == StorageMode.EXTERNAL_PUBLIC_STORAGE) {
+        //Checking Write Permission If Output File is Supposed to be stored in the External Storage
+        if (storageMode == StorageMode.EXTERNAL_CACHE_STORAGE || storageMode == StorageMode.EXTERNAL_PUBLIC_STORAGE)
             checkForWriteStoragePermissions();
-        }
 
         Intent intent = new Intent(Intent.ACTION_PICK);
         intent.setDataAndType(MediaStore.Images.Media.EXTERNAL_CONTENT_URI, "image/*");
@@ -148,31 +147,8 @@ public class GalleryIntegrator extends Integrator {
             activityRef.startActivityForResult(intent, REQUEST_IMAGE_PICK);
         else
             fragmentReference.startActivityForResult(intent, REQUEST_IMAGE_PICK);
-
-
     }
 
-    private void checkForReadStoragePermissions() throws RuntimePermissionNotGrantedException {
-
-        if (mContext == null)
-            throw new IllegalStateException("Context cannot be null");
-
-        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            throw new RuntimePermissionNotGrantedException("read storage permission not granted");
-        }
-
-    }
-
-    private void checkForWriteStoragePermissions() throws RuntimePermissionNotGrantedException {
-
-        if (mContext == null)
-            throw new IllegalStateException("Context cannot be null");
-
-        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
-            throw new RuntimePermissionNotGrantedException("read storage permission not granted");
-        }
-
-    }
 
     @Override
     public void parseResults(int requestCode, int resultCode, Intent data, ImageCallback resultCallback) {
@@ -182,6 +158,7 @@ public class GalleryIntegrator extends Integrator {
 
             if (selectedImageUri != null) {
                 String imagePath = getRealPathFromURI(activityRef, selectedImageUri);
+
 
                 if (imagePath != null) {
 
@@ -198,19 +175,31 @@ public class GalleryIntegrator extends Integrator {
                                 case INTERNAL_STORAGE:
 
                                     //Creating A File In Internal Storage which app will use
-                                    destFile = ImageStorageHelper.createInternalImageFile(mContext, mFile.getName());
+                                    if (imageDirectoryName != null)
+                                        destFile = ImageStorageHelper.createInternalImageFile(mContext, imageDirectoryName + "/" + mFile.getName());
+                                    else
+                                        destFile = ImageStorageHelper.createInternalImageFile(mContext, mFile.getName());
+
                                     break;
 
                                 case INTERNAL_CACHE_STORAGE:
 
                                     //Creating A File In Internal Storage which app will use
-                                    destFile = ImageStorageHelper.createCacheImageFile(mContext, mFile.getName());
+                                    if (imageDirectoryName != null)
+                                        destFile = ImageStorageHelper.createCacheImageFile(mContext, imageDirectoryName + "/" + mFile.getName());
+                                    else
+                                        destFile = ImageStorageHelper.createCacheImageFile(mContext, mFile.getName());
+
                                     break;
 
                                 case EXTERNAL_CACHE_STORAGE:
 
                                     //Creating A File In Internal Storage which app will use
-                                    destFile = ImageStorageHelper.createExternalCacheImageFile(mContext, mFile.getName());
+                                    if (imageDirectoryName != null)
+                                        destFile = ImageStorageHelper.createExternalCacheImageFile(mContext, imageDirectoryName + "/" + mFile.getName());
+                                    else
+                                        destFile = ImageStorageHelper.createExternalCacheImageFile(mContext, mFile.getName());
+
                                     break;
 
                                 case EXTERNAL_PUBLIC_STORAGE: {
@@ -237,25 +226,24 @@ public class GalleryIntegrator extends Integrator {
                                 }
                             }
 
+
+                            //Getting Bitmap Of Required Size
                             Bitmap requiredSizeImage;
                             try {
                                 requiredSizeImage = getBitmapInRequiredSize(mFile, requiredImageSize);
-                            } catch (
-                                    FileNotFoundException e) {
+                            } catch (FileNotFoundException e) {
                                 resultCallback.onResult(RequestSource.SOURCE_GALLERY, null, e);
                                 return;
                             }
 
-                            /*
-                             * Saving the Bitmap of required size to the required directory
-                             */
+                            // Saving the Bitmap of required size to the required directory
                             ImageStorageHelper.saveTo(destFile, requiredSizeImage);
 
+                            //Preparing Results object
                             Result results = getResults(destFile, requiredSizeImage, RequestSource.SOURCE_GALLERY);
-                            taskExecutors.mainThread().
 
-                                    execute(() -> resultCallback.onResult(RequestSource.SOURCE_GALLERY, results, null));
-
+                            //Delivering Results back to main thread
+                            taskExecutors.mainThread().execute(() -> resultCallback.onResult(RequestSource.SOURCE_GALLERY, results, null));
                         }
                     });
 

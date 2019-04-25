@@ -1,27 +1,26 @@
 package com.himanshu.cameraintegrator.integrator;
 
-import android.Manifest;
 import android.app.Activity;
-import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
+import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Build;
 import android.os.Bundle;
+import android.os.Environment;
 import android.provider.MediaStore;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
 import android.support.v4.content.FileProvider;
-import com.himanshu.cameraintegrator.ImageCallback;
-import com.himanshu.cameraintegrator.ImageFormats;
-import com.himanshu.cameraintegrator.ImagesSizes;
-import com.himanshu.cameraintegrator.RequestSource;
+import android.util.Log;
+import com.himanshu.cameraintegrator.*;
 import com.himanshu.cameraintegrator.exceptions.CameraActivityNotFoundException;
 import com.himanshu.cameraintegrator.exceptions.RuntimePermissionNotGrantedException;
 import com.himanshu.cameraintegrator.storage.ImageStorageHelper;
+import com.himanshu.cameraintegrator.storage.StorageMode;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 
 
@@ -33,6 +32,11 @@ import java.io.IOException;
  * @Example
  */
 public class CameraIntegrator extends Integrator {
+
+    /**
+     * Constant to be used for opening Image
+     */
+    public static final int REQUEST_IMAGE_CAPTURE = 21;
 
     private static final String INTENT_EXTRA_FILE_COMPLETE_PATH = "complete_path";
     private static final String INTENT_EXTRA_FILE_DIRECTORY_NAME = "camera_image_directory_name";
@@ -57,15 +61,44 @@ public class CameraIntegrator extends Integrator {
      * This Value can be given
      */
     private String imagePath;
-    private String imageDirectoryName;
-    private String imageName;
-    private String imageFormat;
+
+    /**
+     * Public Directory Name it can be
+     * <ul>
+     * <li>{@link Environment#DIRECTORY_MUSIC}</li>
+     * <li>{@link Environment#DIRECTORY_PODCASTS}</li>
+     * <li>{@link Environment#DIRECTORY_RINGTONES}</li>
+     * <li>{@link Environment#DIRECTORY_ALARMS}</li>
+     * <li>{@link Environment#DIRECTORY_NOTIFICATIONS}</li>
+     * <li>{@link Environment#DIRECTORY_PICTURES}</li>     *
+     * <li>{@link Environment#DIRECTORY_MOVIES}</li>
+     * <li>{@link Environment#DIRECTORY_DOWNLOADS}</li>
+     * <li>{@link Environment#DIRECTORY_DCIM}</li>
+     * <li>{@link Environment#DIRECTORY_DOCUMENTS}</li>     *
+     * </ul>
+     */
+    private @Nullable
+    String publicDirectoryName;
+
+
+    /**
+     * Directory Name Where Image will be kept
+     */
+    private @Nullable
+    String imageDirectoryName;
+
+    private @Nullable
+    String imageName;
+
+    private @Nullable
+    String imageFormat;
 
     /**
      * Required Size of the image
      * this can be one of the {@link ImagesSizes}
      */
-    private int requiredImageSize;
+    private @NonNull
+    int requiredImageSize;
 
 
     /**
@@ -76,6 +109,26 @@ public class CameraIntegrator extends Integrator {
         this.activityReference = activityReference;
     }
 
+    /**
+     * Sets Public Directory Name
+     *
+     * @param publicDirectoryName it can be
+     *                            <ul>
+     *                            <li>{@link Environment#DIRECTORY_MUSIC}</li>
+     *                            <li>{@link Environment#DIRECTORY_PODCASTS}</li>
+     *                            <li>{@link Environment#DIRECTORY_RINGTONES}</li>
+     *                            <li>{@link Environment#DIRECTORY_ALARMS}</li>
+     *                            <li>{@link Environment#DIRECTORY_NOTIFICATIONS}</li>
+     *                            <li>{@link Environment#DIRECTORY_PICTURES}</li>
+     *                            <li>{@link Environment#DIRECTORY_MOVIES}</li>
+     *                            <li>{@link Environment#DIRECTORY_DOWNLOADS}</li>
+     *                            <li>{@link Environment#DIRECTORY_DCIM}</li>
+     *                            <li>{@link Environment#DIRECTORY_DOCUMENTS}</li>
+     *                            </ul>
+     */
+    public void setPublicDirectoryName(String publicDirectoryName) {
+        this.publicDirectoryName = publicDirectoryName;
+    }
 
     public CameraIntegrator(Fragment fragmentReference) {
         super(fragmentReference.getContext());
@@ -100,10 +153,6 @@ public class CameraIntegrator extends Integrator {
         this.imageName = imageName;
     }
 
-    public void setImageFormat(@ImageFormats.ImageFormat String format) {
-        this.imageFormat = format;
-    }
-
     public void setRequiredImageSize(@ImagesSizes.ImageSize int requiredImageSize) {
         this.requiredImageSize = requiredImageSize;
     }
@@ -111,40 +160,20 @@ public class CameraIntegrator extends Integrator {
     /**
      * Opens Camera for capturing image
      */
-    public void initiateCapture() throws CameraActivityNotFoundException, IOException, RuntimePermissionNotGrantedException {
+    public void initiateCapture() throws CameraActivityNotFoundException, RuntimePermissionNotGrantedException {
 
-        // checking if storage permissions are granted or not if not then a RuntimePermissionNotGrantedException is thrown
-        //checkForStoragePermissions();
+        if (storageMode == StorageMode.EXTERNAL_PUBLIC_STORAGE || storageMode == StorageMode.EXTERNAL_CACHE_STORAGE) {
+            checkForWriteStoragePermissions();//Todo fix if needed
+        }
 
         //Lets create a file if user hasn't created one where image will be stored
         if (imagePath != null)
             mFile = new File(imagePath);
-        else {
-
-            switch (storageMode) {
-                case INTERNAL_CACHE_STORAGE:
-                    mFile = ImageStorageHelper.createCacheImageFile(activityReference.getApplicationContext());
-                    break;
-
-                case INTERNAL_STORAGE:
-                    mFile = ImageStorageHelper.createInternalImageFile(activityReference.getApplicationContext());
-                    break;
-
-                case EXTERNAL_PUBLIC_STORAGE:
-
-                    if (imageDirectoryName != null && imageName != null && imageFormat == null)
-                        mFile = ImageStorageHelper.createImageFile(imageDirectoryName, imageName);
-                    else if (imageDirectoryName != null && imageName != null && imageFormat != null)
-                        mFile = ImageStorageHelper.createImageFile(imageDirectoryName, imageName, imageFormat);
-
-                    break;
-
-            }
-        }
-
+        else
+            mFile = createDestinationImageFile();
 
         if (mFile == null)
-            throw new IOException("Details Where image should be stored are not provided, you can call ");
+            throw new RuntimeException("Details Where image should be stored are not provided, you can call ");
 
         Intent cameraIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
         if (cameraIntent.resolveActivity(activityReference.getPackageManager()) != null) {
@@ -162,38 +191,101 @@ public class CameraIntegrator extends Integrator {
 
                 cameraIntent.addFlags(Intent.FLAG_GRANT_READ_URI_PERMISSION);
 
-//                if (fragmentReference == null)
-//                    activityReference.startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
-//                else
-//                    fragmentReference.startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
+                if (fragmentReference == null)
+                    activityReference.startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
+                else
+                    fragmentReference.startActivityForResult(cameraIntent, REQUEST_IMAGE_CAPTURE);
 
             }
         } else throw new CameraActivityNotFoundException("No Camera App found to initiate capture");
     }
 
-    private void checkForStoragePermissions() throws RuntimePermissionNotGrantedException {
+    /**
+     * Creates Destination Image File which will be passed to camera App, where Camera App will store the image
+     *
+     * @return
+     */
+    private File createDestinationImageFile() {
 
-        Context context = (fragmentReference != null) ? fragmentReference.getContext() : activityReference;
+        StringBuilder imageFinalPath = new StringBuilder();
+        switch (storageMode) {
+            case EXTERNAL_PUBLIC_STORAGE:
 
-        if (context == null)
-            throw new IllegalStateException("Context cannot be null");
+                if (publicDirectoryName != null)
+                    imageFinalPath.append(publicDirectoryName);
 
-        if (ContextCompat.checkSelfPermission(context, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-                || ContextCompat.checkSelfPermission(context, Manifest.permission.WRITE_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED
-        ) {
-            throw new RuntimePermissionNotGrantedException("storage permission not granted");
+            case INTERNAL_STORAGE:
+            case INTERNAL_CACHE_STORAGE:
+            case EXTERNAL_CACHE_STORAGE:
+
+                if (imageFinalPath.length() != 0)
+                    imageFinalPath.append("/");
+
+                if (imageDirectoryName != null)
+                    imageFinalPath.append(imageDirectoryName);
+
+                if (imageFinalPath.length() != 0 && imageFinalPath.charAt(imageFinalPath.length() - 1) != '/')
+                    imageFinalPath.append("/");
+
+                if (imageName != null) {
+                    imageFinalPath.append(imageName.endsWith(".jpg") ? imageName : imageName + ".jpg");
+                } else
+                    imageFinalPath.append(ImageStorageHelper.createRandomImageFileName());
         }
 
+        File imageFile = null;
+
+        switch (storageMode) {
+            case INTERNAL_STORAGE:
+                imageFile = ImageStorageHelper.createInternalImageFile(mContext, imageFinalPath.toString());
+                break;
+            case INTERNAL_CACHE_STORAGE:
+                imageFile = ImageStorageHelper.createCacheImageFile(mContext, imageFinalPath.toString());
+                break;
+            case EXTERNAL_CACHE_STORAGE:
+                imageFile = ImageStorageHelper.createExternalCacheImageFile(mContext, imageFinalPath.toString());
+                break;
+            case EXTERNAL_PUBLIC_STORAGE:
+                imageFile = ImageStorageHelper.createImageFile(imageFinalPath.toString());
+                break;
+        }
+
+//        if (!imageFile.exists())
+//            imageFile.mkdirs();
+
+        return imageFile;
     }
+
 
     @Override
     public void parseResults(int requestCode, int resultCode, Intent data, ImageCallback resultCallback) {
 
-//        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
-//            if (mFile != null) {
-//                getParsedBitmapResult(mFile, null, RequestSource.SOURCE_CAMERA, requiredImageSize, resultCallback);
-//            }
-//        }
+        if (requestCode == REQUEST_IMAGE_CAPTURE && resultCode == Activity.RESULT_OK) {
+
+            if (mFile == null)
+                return;
+
+            taskExecutors.diskIO().execute(() -> {
+
+                try {
+                    Bitmap requiredSizeImage = getBitmapInRequiredSize(mFile, requiredImageSize);
+
+                    //Now replacing mFile
+                    // Saving the Bitmap of required size to the required directory
+                    ImageStorageHelper.saveTo(mFile, requiredSizeImage);
+
+                    //Preparing Results object
+                    Result results = getResults(mFile, requiredSizeImage, RequestSource.SOURCE_CAMERA);
+
+                    //Delivering Results back to main thread
+                    taskExecutors.mainThread().execute(() -> resultCallback.onResult(RequestSource.SOURCE_CAMERA, results, null));
+
+                } catch (FileNotFoundException e) {
+                    taskExecutors.mainThread().execute(() -> resultCallback.onResult(RequestSource.SOURCE_CAMERA, null, e));
+                }
+
+            });
+        }
     }
 
     @Override

@@ -1,16 +1,22 @@
 package com.himanshu.cameraintegrator.integrator;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.os.Environment;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import com.bumptech.glide.Glide;
 import com.himanshu.cameraintegrator.ImageCallback;
 import com.himanshu.cameraintegrator.ImagesSizes;
 import com.himanshu.cameraintegrator.RequestSource;
 import com.himanshu.cameraintegrator.Result;
+import com.himanshu.cameraintegrator.exceptions.RuntimePermissionNotGrantedException;
 import com.himanshu.cameraintegrator.executors.AppExecutors;
 import com.himanshu.cameraintegrator.storage.StorageMode;
 
@@ -25,7 +31,6 @@ import java.util.concurrent.ExecutionException;
 public abstract class Integrator {
 
 
-    private Result imageCaptureResult;
     /**
      * {@link AppExecutors} for switching threads
      */
@@ -33,15 +38,29 @@ public abstract class Integrator {
     /**
      * Context of calling activity
      */
-    private Context context;
+    @NonNull
+    Context mContext;
 
-    protected StorageMode storageMode = StorageMode.INTERNAL_STORAGE;
+    protected @NonNull
+    StorageMode storageMode = StorageMode.INTERNAL_STORAGE;
 
     public Integrator(Context context) {
-        this.context = context;
+        this.mContext = context;
         taskExecutors = AppExecutors.getInstance();
     }
 
+    /**
+     * Sets Where the Image will be stored INTERNAL_STORAGE or EXTERNAL_STORAGE
+     * default is {@link StorageMode#INTERNAL_STORAGE}
+     *
+     * @param storageMode it can be one of these
+     *                    <ul>
+     *                    <li>{@link StorageMode#INTERNAL_STORAGE}</li>
+     *                    <li>{@link StorageMode#INTERNAL_CACHE_STORAGE}</li>
+     *                    <li>{@link StorageMode#EXTERNAL_CACHE_STORAGE}</li>
+     *                    <li>{@link StorageMode#EXTERNAL_PUBLIC_STORAGE}</li>
+     *                    </ul>
+     */
     public void setStorageMode(StorageMode storageMode) {
         this.storageMode = storageMode;
     }
@@ -50,7 +69,7 @@ public abstract class Integrator {
      * Reads the Image File without loading it onto memory and returns
      * information about the image file
      *
-     * @param mFile
+     * @param mFile file to image
      * @return
      */
     protected BitmapFactory.Options getImageMetaData(File mFile) {
@@ -62,15 +81,6 @@ public abstract class Integrator {
         return options;
     }
 
-    /**
-     * to be defined by child classes which will parse results and return back to user
-     *
-     * @param requestCode
-     * @param resultCode
-     * @param data
-     * @param resultCallback
-     */
-    public abstract void parseResults(int requestCode, int resultCode, Intent data, final ImageCallback resultCallback);
 
     /**
      * Loads Image in #requiredImageSize using {@link Glide}
@@ -86,7 +96,7 @@ public abstract class Integrator {
         try {
 
             return Glide.
-                    with(context)
+                    with(mContext)
                     .asBitmap()
                     .load(file)
                     .submit(requiredSize.getWidth(), requiredSize.getHeight())
@@ -98,18 +108,6 @@ public abstract class Integrator {
             return null;
         }
     }
-
-    /**
-     * For Saving State in Case activity got destroyed by Android
-     *
-     * @param outState
-     */
-    public abstract void saveState(Bundle outState);
-
-    /**
-     * For Restoring state in case of activity or fragment regenration
-     */
-    public abstract void restoreState(Bundle savedInstanceState);
 
 
     /**
@@ -174,6 +172,31 @@ public abstract class Integrator {
     }
 
     /**
+     * Checks The {@link Manifest.permission#READ_EXTERNAL_STORAGE} Permission
+     *
+     * @throws RuntimePermissionNotGrantedException runtime permission if {@link Manifest.permission#READ_EXTERNAL_STORAGE} is not granted
+     */
+    void checkForReadStoragePermissions() throws RuntimePermissionNotGrantedException {
+
+        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            throw new RuntimePermissionNotGrantedException("read storage permission not granted");
+        }
+    }
+
+    /**
+     * Checks The {@link Manifest.permission#WRITE_EXTERNAL_STORAGE} Permission
+     *
+     * @throws RuntimePermissionNotGrantedException runtime permission if {@link Manifest.permission#WRITE_EXTERNAL_STORAGE} is not granted
+     */
+    void checkForWriteStoragePermissions() throws RuntimePermissionNotGrantedException {
+
+        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            throw new RuntimePermissionNotGrantedException("read storage permission not granted");
+        }
+
+    }
+
+    /**
      * Reads Bitmap from storage
      *
      * @param mFile             file to read
@@ -197,8 +220,8 @@ public abstract class Integrator {
     /**
      * Prepares {@link Result} for delivering to user
      *
-     * @param mFile file where image is saved
-     * @param image image file
+     * @param mFile  file where image is saved
+     * @param image  image file
      * @param source request source
      * @return
      */
@@ -216,5 +239,26 @@ public abstract class Integrator {
         return imageResults;
     }
 
+    /**
+     * to be defined by child classes which will parse results and return back to user
+     *
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     * @param resultCallback
+     */
+    public abstract void parseResults(int requestCode, int resultCode, Intent data, final ImageCallback resultCallback);
+
+    /**
+     * For Saving State in case activity/Fragment gets destroyed by Android
+     *
+     * @param outState
+     */
+    public abstract void saveState(Bundle outState);
+
+    /**
+     * For Restoring state in case of activity or fragment gets regenerated
+     */
+    public abstract void restoreState(Bundle savedInstanceState);
 
 }

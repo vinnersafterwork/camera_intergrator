@@ -7,6 +7,7 @@ import android.os.Bundle
 import android.os.Environment
 import android.support.v4.app.ActivityCompat
 import android.support.v7.app.AppCompatActivity
+import android.util.Log
 import com.bumptech.glide.Glide
 import com.himanshu.cameraintegrator.ImageCallback
 import com.himanshu.cameraintegrator.ImagesSizes
@@ -25,6 +26,7 @@ class MainActivity : AppCompatActivity() {
     private val camerResultCallback = ImageCallback { requestedBy, result, error ->
 
         Glide.with(this).load(result!!.bitmap).into(iv)
+        Log.d("TAG", result.imagePath)
 
     }
 
@@ -40,12 +42,11 @@ class MainActivity : AppCompatActivity() {
             1
         )
 
-//        cameraIntegrator = CameraIntegrator(this)
-//        cameraIntegrator.setRequiredImageSize(ImagesSizes.OPTIMUM_MEDIUM)
-//        cameraIntegrator.setStorageMode(StorageMode.INTERNAL_CACHE_STORAGE)
-//
-//        cameraIntegrator.setImagePath()
-        //     cameraIntegrator.setImageDirectoryName("cameraResult")
+        cameraIntegrator = CameraIntegrator(this)
+        cameraIntegrator.setRequiredImageSize(ImagesSizes.OPTIMUM_MEDIUM)
+        cameraIntegrator.setStorageMode(StorageMode.INTERNAL_STORAGE)
+//        cameraIntegrator.setImagePath("Ss")
+//        cameraIntegrator.setImageDirectoryName("cameraResult")
 
 
         galleryIntegrator = GalleryIntegrator(this)
@@ -55,7 +56,7 @@ class MainActivity : AppCompatActivity() {
 
         galleryBtn.setOnClickListener { galleryIntegrator.initiateImagePick() }
 
-//        cameraBtn.setOnClickListener { cameraIntegrator.initiateCapture() }
+        cameraBtn.setOnClickListener { cameraIntegrator.initiateCapture() }
     }
 
     override fun onActivityResult(requestCode: Int, resultCode: Int, data: Intent?) {
@@ -63,7 +64,8 @@ class MainActivity : AppCompatActivity() {
 
         if (requestCode == GalleryIntegrator.REQUEST_IMAGE_PICK)
             galleryIntegrator.parseResults(requestCode, resultCode, data, camerResultCallback)
-
+        if (requestCode == CameraIntegrator.REQUEST_IMAGE_CAPTURE)
+            cameraIntegrator.parseResults(requestCode, resultCode, data, camerResultCallback)
     }
 
 

@@ -97,9 +97,9 @@ public class ImageStorageHelper {
      *
      * @return
      */
-    private static String createRandomImageFileName() {
+    public static String createRandomImageFileName() {
         String timestamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(new Date());
-        return "IMAGE_" + timestamp + ".jpg";
+        return "image_" + timestamp + ".jpg";
     }
 
 
@@ -114,21 +114,42 @@ public class ImageStorageHelper {
     }
 
     /**
+     * Creates An Image File in $directoryName with name #imageName
+     *
+     * @return
+     */
+    public static File createImageFile(String completeImagePath) {
+        return createImageFile(null, completeImagePath, null);
+    }
+
+    /**
      * Creates An Image File in $directoryName with $imageName name and $fileFormat format
      *
      * @param directoryName
      * @return
      */
-    public static File createImageFile(String directoryName, @Nullable String imageName, @NonNull String fileFormat) {
+    public static File createImageFile(String directoryName, @Nullable String imageName, @Nullable String fileFormat) {
+
+        StringBuilder filePath = new StringBuilder();
+
+        if (directoryName != null)
+            filePath.append(directoryName);
+
+        if (filePath.length() != 0)
+            filePath.append("/");
+
+        filePath.append(imageName);
+
+        if (fileFormat != null && !fileFormat.endsWith(fileFormat))
+            filePath.append(fileFormat);
 
         // Getting a reference to Target storage directory
-        File storageDir = Environment.getExternalStoragePublicDirectory(directoryName);
+        File storageDir = Environment.getExternalStoragePublicDirectory(filePath.toString());
 
         // Creating directory if not made already
         storageDir.mkdirs();
 
-        File image = new File(storageDir, imageName + "." + fileFormat);
-        return image;
+        return storageDir;
     }
 
 }
