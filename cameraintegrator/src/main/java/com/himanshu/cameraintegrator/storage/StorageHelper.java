@@ -255,12 +255,11 @@ public class StorageHelper {
         // Getting a reference to Target storage directory
         File storageDir = Environment.getExternalStoragePublicDirectory(directoryName);
 
-        // Creating directory if not made already
-        if (storageDir.mkdirs()) {
-            return new File(storageDir, imageName);
-        } else
-            return null;
 
+        if (!storageDir.exists())
+            storageDir.mkdirs();
+
+        return new File(storageDir, imageName);
     }
 
 
