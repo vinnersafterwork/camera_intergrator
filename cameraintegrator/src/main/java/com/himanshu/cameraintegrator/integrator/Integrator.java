@@ -1,16 +1,26 @@
 package com.himanshu.cameraintegrator.integrator;
 
+import android.Manifest;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
+import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
+import android.support.v4.content.ContextCompat;
 import com.bumptech.glide.Glide;
-import com.himanshu.cameraintegrator.*;
+import com.himanshu.cameraintegrator.ImageCallback;
+import com.himanshu.cameraintegrator.ImagesSizes;
+import com.himanshu.cameraintegrator.RequestSource;
+import com.himanshu.cameraintegrator.Result;
+import com.himanshu.cameraintegrator.exceptions.RuntimePermissionNotGrantedException;
 import com.himanshu.cameraintegrator.executors.AppExecutors;
+import com.himanshu.cameraintegrator.storage.StorageMode;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.util.concurrent.ExecutionException;
 
 
@@ -19,35 +29,46 @@ import java.util.concurrent.ExecutionException;
  */
 public abstract class Integrator {
 
-    /**
-     * Constant to be used for identifying image capture action
-     */
-    public static final int REQUEST_IMAGE_CAPTURE = 1;
 
-    /**
-     * Constant to be used for identifying image pick action
-     */
-    public static final int REQUEST_IMAGE_PICK = 2;
-    Result imageCaptureResult;
     /**
      * {@link AppExecutors} for switching threads
      */
-    private AppExecutors taskExecutors;
+    protected AppExecutors taskExecutors;
     /**
      * Context of calling activity
      */
-    private Context context;
+    @NonNull
+    Context mContext;
+
+    protected @NonNull
+    StorageMode storageMode = StorageMode.INTERNAL_FILE_STORAGE;
 
     public Integrator(Context context) {
-        this.context = context;
+        this.mContext = context;
         taskExecutors = AppExecutors.getInstance();
+    }
+
+    /**
+     * Sets Where the Image will be stored INTERNAL_FILE_STORAGE or EXTERNAL_STORAGE
+     * default is {@link StorageMode#INTERNAL_FILE_STORAGE}
+     *
+     * @param storageMode it can be one of these
+     *                    <ul>
+     *                    <li>{@link StorageMode#INTERNAL_FILE_STORAGE}</li>
+     *                    <li>{@link StorageMode#INTERNAL_CACHE_STORAGE}</li>
+     *                    <li>{@link StorageMode#EXTERNAL_CACHE_STORAGE}</li>
+     *                    <li>{@link StorageMode#EXTERNAL_PUBLIC_STORAGE}</li>
+     *                    </ul>
+     */
+    public void setStorageMode(StorageMode storageMode) {
+        this.storageMode = storageMode;
     }
 
     /**
      * Reads the Image File without loading it onto memory and returns
      * information about the image file
      *
-     * @param mFile
+     * @param mFile file to image
      * @return
      */
     protected BitmapFactory.Options getImageMetaData(File mFile) {
@@ -59,15 +80,6 @@ public abstract class Integrator {
         return options;
     }
 
-    /**
-     * to be defined by child classes which will parse results and return back to user
-     *
-     * @param requestCode
-     * @param resultCode
-     * @param data
-     * @param resultCallback
-     */
-    public abstract void parseResults(int requestCode, int resultCode, Intent data, final ImageCallback resultCallback);
 
     /**
      * Loads Image in #requiredImageSize using {@link Glide}
@@ -83,7 +95,7 @@ public abstract class Integrator {
         try {
 
             return Glide.
-                    with(context)
+                    with(mContext)
                     .asBitmap()
                     .load(file)
                     .submit(requiredSize.getWidth(), requiredSize.getHeight())
@@ -95,18 +107,6 @@ public abstract class Integrator {
             return null;
         }
     }
-
-    /**
-     * For Saving State in Case activity got destroyed by Android
-     *
-     * @param outState
-     */
-    public abstract void saveState(Bundle outState);
-
-    /**
-     * For Restoring state in case of activity or fragment regenration
-     */
-    public abstract void restoreState(Bundle savedInstanceState);
 
 
     /**
@@ -170,50 +170,94 @@ public abstract class Integrator {
         return finalImageSize;
     }
 
-    protected void getParsedBitmapResult(File mFile, @Nullable String targetFolderName, @RequestSource.RequestSourceOptions final int source, final int requiredImageSize, final ImageCallback callback) {
+    /**
+     * Checks The {@link Manifest.permission#READ_EXTERNAL_STORAGE} Permission
+     *
+     * @throws RuntimePermissionNotGrantedException runtime permission if {@link Manifest.permission#READ_EXTERNAL_STORAGE} is not granted
+     */
+    void checkForReadStoragePermissions() throws RuntimePermissionNotGrantedException {
 
-        Runnable getImageInfoTask = () -> {
+        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            throw new RuntimePermissionNotGrantedException("read storage permission not granted");
+        }
+    }
 
-            //Reading data About the File
-            BitmapFactory.Options sourceImageData = getImageMetaData(mFile);
+    /**
+     * Checks The {@link Manifest.permission#WRITE_EXTERNAL_STORAGE} Permission
+     *
+     * @throws RuntimePermissionNotGrantedException runtime permission if {@link Manifest.permission#WRITE_EXTERNAL_STORAGE} is not granted
+     */
+    void checkForWriteStoragePermissions() throws RuntimePermissionNotGrantedException {
 
-            //Bitmap Of Requried Size
-            final Bitmap requiredSizeImage = getRequiredSizeImage(mFile, sourceImageData, requiredImageSize);
-
-            //Creating A Copy Of Selected File In Case of Gallery Pick
-            //and replacing the large file with small file in Camera Capture
-
-            imageCaptureResult = new Result();
-            imageCaptureResult.setWidth(requiredSizeImage.getWidth());
-            imageCaptureResult.setHeight(requiredSizeImage.getHeight());
-            imageCaptureResult.setBitmap(requiredSizeImage);
-
-            if (source == RequestSource.SOURCE_CAMERA) {
-
-                //Replacing the Original Large File captured By the camera
-                //with the size of file we needed
-                ImageHelper.saveTo(mFile.getAbsolutePath(), requiredSizeImage);
-                imageCaptureResult.setImageName(mFile.getName());
-                imageCaptureResult.setImagePath(mFile.getAbsolutePath());
-                imageCaptureResult.setFileSizeInMb(mFile.length() / (1024 * 1024));
-
-            } else if (source == RequestSource.SOURCE_GALLERY) {
-
-                //Creating A Copy of required Size Image File
-                //and then storing it in required folder
-                File galleryPickedFile = ImageHelper.createImageFile(targetFolderName);
-                ImageHelper.saveTo(galleryPickedFile.getAbsolutePath(), requiredSizeImage);
-                imageCaptureResult.setImageName(galleryPickedFile.getName());
-                imageCaptureResult.setImagePath(galleryPickedFile.getAbsolutePath());
-                imageCaptureResult.setFileSizeInMb(galleryPickedFile.length() / (1024 * 1024));
-            }
-
-            taskExecutors.mainThread().execute(() -> callback.onResult(source, imageCaptureResult));
-        };
-
-        taskExecutors.diskIO().execute(getImageInfoTask);
+        if (ContextCompat.checkSelfPermission(mContext, Manifest.permission.READ_EXTERNAL_STORAGE) != PackageManager.PERMISSION_GRANTED) {
+            throw new RuntimePermissionNotGrantedException("read storage permission not granted");
+        }
 
     }
 
+    /**
+     * Reads Bitmap from storage
+     *
+     * @param mFile             file to read
+     * @param requiredImageSize size of required image
+     * @return image in required size
+     * @throws FileNotFoundException file not found
+     */
+    protected Bitmap getBitmapInRequiredSize(File mFile,
+                                             final int requiredImageSize) throws FileNotFoundException {
+
+        if (!mFile.exists())
+            throw new FileNotFoundException("file not found" + mFile.getAbsolutePath());
+
+        //Reading data About the File
+        BitmapFactory.Options sourceImageData = getImageMetaData(mFile);
+
+        //Bitmap Of Requried Size
+        return getRequiredSizeImage(mFile, sourceImageData, requiredImageSize);
+    }
+
+    /**
+     * Prepares {@link Result} for delivering to user
+     *
+     * @param mFile  file where image is saved
+     * @param image  image file
+     * @param source request source
+     * @return
+     */
+    protected Result getResults(File mFile,
+                                Bitmap image,
+                                @RequestSource.RequestSourceOptions final int source) {
+
+        Result imageResults = new Result();
+        imageResults.setWidth(image.getWidth());
+        imageResults.setHeight(image.getHeight());
+        imageResults.setBitmap(image);
+        imageResults.setImageName(mFile.getName());
+        imageResults.setImagePath(mFile.getAbsolutePath());
+        imageResults.setFileSizeInMb(mFile.length() / (1024 * 1024));
+        return imageResults;
+    }
+
+    /**
+     * to be defined by child classes which will parse results and return back to user
+     *
+     * @param requestCode
+     * @param resultCode
+     * @param data
+     * @param resultCallback
+     */
+    public abstract void parseResults(int requestCode, int resultCode, Intent data, final ImageCallback resultCallback);
+
+    /**
+     * For Saving State in case activity/Fragment gets destroyed by Android
+     *
+     * @param outState
+     */
+    public abstract void saveState(Bundle outState);
+
+    /**
+     * For Restoring state in case of activity or fragment gets regenerated
+     */
+    public abstract void restoreState(Bundle savedInstanceState);
 
 }

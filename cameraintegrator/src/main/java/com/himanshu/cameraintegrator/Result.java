@@ -3,6 +3,8 @@ package com.himanshu.cameraintegrator;
 import android.graphics.Bitmap;
 import android.support.annotation.Nullable;
 
+import java.io.File;
+
 /**
  * Created by Himanshu on 4/30/2018.
  */
@@ -101,5 +103,13 @@ public class Result {
 
     public void setBitmap(Bitmap bitmap) {
         this.bitmap = bitmap;
+    }
+
+    public void dispose() {
+
+        if (bitmap != null && !bitmap.isRecycled())
+            bitmap.recycle();
+
+        new File(imagePath).delete();
     }
 }
