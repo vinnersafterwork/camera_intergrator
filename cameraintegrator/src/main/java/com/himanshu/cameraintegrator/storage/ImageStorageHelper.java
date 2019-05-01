@@ -161,16 +161,6 @@ public class ImageStorageHelper {
     /**
      * Creates An Image File in $directoryName with name #imageName
      *
-     * @param directoryName
-     * @return
-     */
-    public static File createExternalPublicImageFile(String directoryName, String imageName) {
-        return createExternalPublicImageFile(directoryName, imageName, "jpg");
-    }
-
-    /**
-     * Creates An Image File in $directoryName with name #imageName
-     *
      * @return
      */
     public static File createExternalPublicImageFile(String completeImagePath) {
@@ -184,7 +174,17 @@ public class ImageStorageHelper {
      * @return
      */
     public static File createExternalPublicImageFile(String directoryName, @Nullable String imageName, @Nullable String fileFormat) {
-        return StorageHelper.createExternalPublicFile(directoryName, imageName, fileFormat);
+        return createExternalPublicImageFile(directoryName, imageName + "." + fileFormat);
+    }
+
+    /**
+     * Creates An Image File in $directoryName with $imageName name and $fileFormat format
+     *
+     * @param directoryName
+     * @return
+     */
+    public static File createExternalPublicImageFile(String directoryName, @Nullable String imageNameWithExtension) {
+        return StorageHelper.createExternalPublicFile(directoryName, imageNameWithExtension);
     }
 
 }

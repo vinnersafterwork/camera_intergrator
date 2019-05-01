@@ -236,12 +236,13 @@ public class CameraIntegrator extends Integrator {
         File imageFile = null;
 
         switch (storageMode) {
-            case INTERNAL_FILE_STORAGE:
-                imageFile = ImageStorageHelper.createInternalImageFile(mContext, imageDirectoryFinalPath.toString(), imageFinalName);
-                break;
 
             case INTERNAL_CACHE_STORAGE:
                 imageFile = ImageStorageHelper.createCacheImageFile(mContext, imageDirectoryFinalPath.toString(), imageFinalName);
+                break;
+
+            case INTERNAL_FILE_STORAGE:
+                imageFile = ImageStorageHelper.createInternalImageFile(mContext, imageDirectoryFinalPath.toString(), imageFinalName);
                 break;
 
             case EXTERNAL_CACHE_STORAGE:
