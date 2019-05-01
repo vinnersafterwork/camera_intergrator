@@ -7,7 +7,6 @@ import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.graphics.BitmapFactory;
 import android.os.Bundle;
-import android.os.Environment;
 import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.content.ContextCompat;
@@ -42,7 +41,7 @@ public abstract class Integrator {
     Context mContext;
 
     protected @NonNull
-    StorageMode storageMode = StorageMode.INTERNAL_STORAGE;
+    StorageMode storageMode = StorageMode.INTERNAL_FILE_STORAGE;
 
     public Integrator(Context context) {
         this.mContext = context;
@@ -50,12 +49,12 @@ public abstract class Integrator {
     }
 
     /**
-     * Sets Where the Image will be stored INTERNAL_STORAGE or EXTERNAL_STORAGE
-     * default is {@link StorageMode#INTERNAL_STORAGE}
+     * Sets Where the Image will be stored INTERNAL_FILE_STORAGE or EXTERNAL_STORAGE
+     * default is {@link StorageMode#INTERNAL_FILE_STORAGE}
      *
      * @param storageMode it can be one of these
      *                    <ul>
-     *                    <li>{@link StorageMode#INTERNAL_STORAGE}</li>
+     *                    <li>{@link StorageMode#INTERNAL_FILE_STORAGE}</li>
      *                    <li>{@link StorageMode#INTERNAL_CACHE_STORAGE}</li>
      *                    <li>{@link StorageMode#EXTERNAL_CACHE_STORAGE}</li>
      *                    <li>{@link StorageMode#EXTERNAL_PUBLIC_STORAGE}</li>

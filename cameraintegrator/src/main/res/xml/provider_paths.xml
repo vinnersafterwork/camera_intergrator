@@ -1,20 +1,15 @@
 <?xml version="1.0" encoding="utf-8"?>
 <paths>
 
-    <external-path
-            name="external_files"
-            path="."/>
+    <cache-path name="cache" path="."/>
 
-    <external-cache-path
-            name="external_files"
-            path="."/>
+    <files-path name="files" path="."/>
 
-    <files-path
-            name="app_directory"
-            path="."/>
+    <external-cache-path name="cache" path="."/>
 
-    <cache-path
-            name="app_directory"
-            path="."/>
+    <external-files-path name="files" path="."/>
+
+    <external-path name="external_files" path="."/>
+
 
 </paths>

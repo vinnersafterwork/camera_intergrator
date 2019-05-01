@@ -1,11 +1,9 @@
 package com.himanshu.cameraintegrator.integrator;
 
-import android.Manifest;
 import android.app.Activity;
 import android.content.ActivityNotFoundException;
 import android.content.Context;
 import android.content.Intent;
-import android.content.pm.PackageManager;
 import android.database.Cursor;
 import android.graphics.Bitmap;
 import android.net.Uri;
@@ -14,14 +12,12 @@ import android.os.Environment;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.Fragment;
-import android.support.v4.content.ContextCompat;
 import com.himanshu.cameraintegrator.ImageCallback;
 import com.himanshu.cameraintegrator.ImagesSizes;
 import com.himanshu.cameraintegrator.RequestSource;
 import com.himanshu.cameraintegrator.Result;
 import com.himanshu.cameraintegrator.exceptions.RuntimePermissionNotGrantedException;
 import com.himanshu.cameraintegrator.storage.ImageStorageHelper;
-import com.himanshu.cameraintegrator.storage.StorageHelper;
 import com.himanshu.cameraintegrator.storage.StorageMode;
 
 import java.io.File;
@@ -172,11 +168,11 @@ public class GalleryIntegrator extends Integrator {
                             File destFile = null;
 
                             switch (storageMode) {
-                                case INTERNAL_STORAGE:
+                                case INTERNAL_FILE_STORAGE:
 
                                     //Creating A File In Internal Storage which app will use
                                     if (imageDirectoryName != null)
-                                        destFile = ImageStorageHelper.createInternalImageFile(mContext, imageDirectoryName + "/" + mFile.getName());
+                                        destFile = ImageStorageHelper.createInternalImageFile(mContext, imageDirectoryName, mFile.getName());
                                     else
                                         destFile = ImageStorageHelper.createInternalImageFile(mContext, mFile.getName());
 
@@ -186,7 +182,7 @@ public class GalleryIntegrator extends Integrator {
 
                                     //Creating A File In Internal Storage which app will use
                                     if (imageDirectoryName != null)
-                                        destFile = ImageStorageHelper.createCacheImageFile(mContext, imageDirectoryName + "/" + mFile.getName());
+                                        destFile = ImageStorageHelper.createCacheImageFile(mContext, imageDirectoryName, mFile.getName());
                                     else
                                         destFile = ImageStorageHelper.createCacheImageFile(mContext, mFile.getName());
 
@@ -202,6 +198,15 @@ public class GalleryIntegrator extends Integrator {
 
                                     break;
 
+                                case EXTERNAL_FILE_STORAGE:
+
+                                    //Creating A File In Internal Storage which app will use
+                                    if (imageDirectoryName != null)
+                                        destFile = ImageStorageHelper.createExternalImageFile(mContext, imageDirectoryName, mFile.getName());
+                                    else
+                                        destFile = ImageStorageHelper.createExternalImageFile(mContext, mFile.getName());
+
+                                    break;
                                 case EXTERNAL_PUBLIC_STORAGE: {
 
                                     File storageDir;

@@ -12,8 +12,10 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.FileProvider;
-import android.util.Log;
-import com.himanshu.cameraintegrator.*;
+import com.himanshu.cameraintegrator.ImageCallback;
+import com.himanshu.cameraintegrator.ImagesSizes;
+import com.himanshu.cameraintegrator.RequestSource;
+import com.himanshu.cameraintegrator.Result;
 import com.himanshu.cameraintegrator.exceptions.CameraActivityNotFoundException;
 import com.himanshu.cameraintegrator.exceptions.RuntimePermissionNotGrantedException;
 import com.himanshu.cameraintegrator.storage.ImageStorageHelper;
@@ -21,7 +23,6 @@ import com.himanshu.cameraintegrator.storage.StorageMode;
 
 import java.io.File;
 import java.io.FileNotFoundException;
-import java.io.IOException;
 
 
 /**
@@ -29,7 +30,6 @@ import java.io.IOException;
  * while using native camera app to click images
  *
  * @author Himanshu
- * @Example
  */
 public class CameraIntegrator extends Integrator {
 
@@ -163,7 +163,7 @@ public class CameraIntegrator extends Integrator {
     public void initiateCapture() throws CameraActivityNotFoundException, RuntimePermissionNotGrantedException {
 
         if (storageMode == StorageMode.EXTERNAL_PUBLIC_STORAGE || storageMode == StorageMode.EXTERNAL_CACHE_STORAGE) {
-            checkForWriteStoragePermissions();//Todo fix if needed
+            checkForWriteStoragePermissions();
         }
 
         //Lets create a file if user hasn't created one where image will be stored
@@ -171,6 +171,7 @@ public class CameraIntegrator extends Integrator {
             mFile = new File(imagePath);
         else
             mFile = createDestinationImageFile();
+
 
         if (mFile == null)
             throw new RuntimeException("Details Where image should be stored are not provided, you can call ");
@@ -207,51 +208,55 @@ public class CameraIntegrator extends Integrator {
      */
     private File createDestinationImageFile() {
 
-        StringBuilder imageFinalPath = new StringBuilder();
+        StringBuilder imageDirectoryFinalPath = new StringBuilder();
+        String imageFinalName;
         switch (storageMode) {
             case EXTERNAL_PUBLIC_STORAGE:
 
                 if (publicDirectoryName != null)
-                    imageFinalPath.append(publicDirectoryName);
+                    imageDirectoryFinalPath.append(publicDirectoryName);
 
-            case INTERNAL_STORAGE:
             case INTERNAL_CACHE_STORAGE:
+            case INTERNAL_FILE_STORAGE:
             case EXTERNAL_CACHE_STORAGE:
 
-                if (imageFinalPath.length() != 0)
-                    imageFinalPath.append("/");
+                if (imageDirectoryFinalPath.length() != 0)
+                    imageDirectoryFinalPath.append("/");
 
                 if (imageDirectoryName != null)
-                    imageFinalPath.append(imageDirectoryName);
-
-                if (imageFinalPath.length() != 0 && imageFinalPath.charAt(imageFinalPath.length() - 1) != '/')
-                    imageFinalPath.append("/");
-
-                if (imageName != null) {
-                    imageFinalPath.append(imageName.endsWith(".jpg") ? imageName : imageName + ".jpg");
-                } else
-                    imageFinalPath.append(ImageStorageHelper.createRandomImageFileName());
+                    imageDirectoryFinalPath.append(imageDirectoryName);
         }
+
+        if (imageName != null) {
+            imageFinalName = imageName.endsWith(".jpg") ? imageName : imageName + ".jpg";
+        } else
+            imageFinalName = ImageStorageHelper.createRandomImageFileName();
+
 
         File imageFile = null;
 
         switch (storageMode) {
-            case INTERNAL_STORAGE:
-                imageFile = ImageStorageHelper.createInternalImageFile(mContext, imageFinalPath.toString());
+            case INTERNAL_FILE_STORAGE:
+                imageFile = ImageStorageHelper.createInternalImageFile(mContext, imageDirectoryFinalPath.toString(), imageFinalName);
                 break;
+
             case INTERNAL_CACHE_STORAGE:
-                imageFile = ImageStorageHelper.createCacheImageFile(mContext, imageFinalPath.toString());
+                imageFile = ImageStorageHelper.createCacheImageFile(mContext, imageDirectoryFinalPath.toString(), imageFinalName);
                 break;
+
             case EXTERNAL_CACHE_STORAGE:
-                imageFile = ImageStorageHelper.createExternalCacheImageFile(mContext, imageFinalPath.toString());
+                imageFile = ImageStorageHelper.createExternalCacheImageFile(mContext, imageDirectoryFinalPath.toString(), imageFinalName);
                 break;
+
+            case EXTERNAL_FILE_STORAGE:
+                imageFile = ImageStorageHelper.createExternalImageFile(mContext, imageDirectoryFinalPath.toString(), imageFinalName);
+                break;
+
             case EXTERNAL_PUBLIC_STORAGE:
-                imageFile = ImageStorageHelper.createImageFile(imageFinalPath.toString());
+                imageFile = ImageStorageHelper.createExternalPublicImageFile(imageDirectoryFinalPath.toString(), imageFinalName);
                 break;
         }
 
-//        if (!imageFile.exists())
-//            imageFile.mkdirs();
 
         return imageFile;
     }

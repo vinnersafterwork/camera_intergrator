@@ -2,8 +2,6 @@ package com.himanshu.cameraintegrator.storage;
 
 import android.content.Context;
 import android.graphics.Bitmap;
-import android.os.Environment;
-import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 
 import java.io.File;
@@ -49,8 +47,18 @@ public class ImageStorageHelper {
      * @return
      */
     public static File createCacheImageFile(Context context, String fileName) {
-        return StorageHelper.createCacheFile(context, fileName);
+        return StorageHelper.createInternalCacheFile(context, fileName);
     }
+
+    /**
+     * Creates An Image File in $directoryName
+     *
+     * @return
+     */
+    public static File createCacheImageFile(Context context, String directoryName, String fileName) {
+        return StorageHelper.createInternalCacheFile(context, directoryName, fileName);
+    }
+
 
     /**
      * Creates An Image File in $directoryName
@@ -68,7 +76,16 @@ public class ImageStorageHelper {
      * @return
      */
     public static File createInternalImageFile(Context context, String imageName) {
-        return StorageHelper.createInternalFile(context, imageName);
+        return createInternalImageFile(context, null, imageName);
+    }
+
+    /**
+     * Creates An Image File in $directoryName
+     *
+     * @return
+     */
+    public static File createInternalImageFile(Context context, String directory, String imageName) {
+        return StorageHelper.createInternalFile(context, directory, imageName);
     }
 
 
@@ -91,6 +108,44 @@ public class ImageStorageHelper {
         return StorageHelper.createExternalCacheFile(context, imageName);
     }
 
+    /**
+     * Creates An Image File in $directoryName
+     *
+     * @return
+     */
+    public static File createExternalCacheImageFile(Context context, String directory, String imageName) {
+        return StorageHelper.createExternalCacheFile(context, directory, imageName);
+    }
+
+
+    /**
+     * Creates An Image File in $directoryName
+     *
+     * @return
+     */
+    public static File createExternalImageFile(Context context) {
+        String imageName = createRandomImageFileName();
+        return createExternalImageFile(context, imageName);
+    }
+
+    /**
+     * Creates An Image File in $directoryName
+     *
+     * @return
+     */
+    public static File createExternalImageFile(Context context, String imageName) {
+        return createExternalImageFile(context, null, imageName);
+    }
+
+    /**
+     * Creates An Image File in $directoryName
+     *
+     * @return
+     */
+    public static File createExternalImageFile(Context context, String directory, String imageName) {
+        return StorageHelper.createExternalFile(context, directory, imageName);
+    }
+
 
     /**
      * Creates a random name for an Image File
@@ -109,8 +164,8 @@ public class ImageStorageHelper {
      * @param directoryName
      * @return
      */
-    public static File createImageFile(String directoryName, String imageName) {
-        return createImageFile(directoryName, imageName, "jpg");
+    public static File createExternalPublicImageFile(String directoryName, String imageName) {
+        return createExternalPublicImageFile(directoryName, imageName, "jpg");
     }
 
     /**
@@ -118,8 +173,8 @@ public class ImageStorageHelper {
      *
      * @return
      */
-    public static File createImageFile(String completeImagePath) {
-        return createImageFile(null, completeImagePath, null);
+    public static File createExternalPublicImageFile(String completeImagePath) {
+        return createExternalPublicImageFile(null, completeImagePath, null);
     }
 
     /**
@@ -128,28 +183,8 @@ public class ImageStorageHelper {
      * @param directoryName
      * @return
      */
-    public static File createImageFile(String directoryName, @Nullable String imageName, @Nullable String fileFormat) {
-
-        StringBuilder filePath = new StringBuilder();
-
-        if (directoryName != null)
-            filePath.append(directoryName);
-
-        if (filePath.length() != 0)
-            filePath.append("/");
-
-        filePath.append(imageName);
-
-        if (fileFormat != null && !fileFormat.endsWith(fileFormat))
-            filePath.append(fileFormat);
-
-        // Getting a reference to Target storage directory
-        File storageDir = Environment.getExternalStoragePublicDirectory(filePath.toString());
-
-        // Creating directory if not made already
-        storageDir.mkdirs();
-
-        return storageDir;
+    public static File createExternalPublicImageFile(String directoryName, @Nullable String imageName, @Nullable String fileFormat) {
+        return StorageHelper.createExternalPublicFile(directoryName, imageName, fileFormat);
     }
 
 }
