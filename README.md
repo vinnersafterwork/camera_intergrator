@@ -1,9 +1,10 @@
 ## Under Development *Not Ready For Production Yet*
 
 # camera_intergrator
-A Light Camera and Galllery utility that helps you in reducing boilerplate code using native camera app or while picking image from gallery
+A Light Camera and Galllery utility that helps you in reducing boilerplate code using Default camera app or while picking image from gallery
 
-### Usage 
+### Usage
+
 #### 1. Using Camera
 
 1. Start Camera Integrator
