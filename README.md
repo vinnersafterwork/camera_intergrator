@@ -1,9 +1,33 @@
+[![Release](https://jitpack.io/v/vinnersafterwork/camera_intergrator.svg)](https://jitpack.io/#vinnersafterwork/camera_intergrator)
+
+
 ## Under Development *Not Ready For Production Yet*
 
 # camera_intergrator
 A Light Camera and Galllery utility that helps you in reducing boilerplate code using Default camera app or while picking image from gallery
 
 ### Usage
+
+#### Setup
+
+Step 1. Add it in your root build.gradle at the end of repositories:
+
+```
+allprojects {
+		repositories {
+			...
+			maven { url 'https://jitpack.io' }
+		}
+	}
+```
+
+Step 2. Add the dependency
+```
+dependencies {
+	        implementation 'com.github.vinnersafterwork:camera_intergrator:v0.2.0'
+	}
+```
+
 
 #### 1. Using Camera
 
