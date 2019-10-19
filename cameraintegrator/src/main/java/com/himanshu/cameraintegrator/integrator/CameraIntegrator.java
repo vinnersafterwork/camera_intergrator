@@ -12,6 +12,7 @@ import android.support.annotation.NonNull;
 import android.support.annotation.Nullable;
 import android.support.v4.app.Fragment;
 import android.support.v4.content.FileProvider;
+
 import com.himanshu.cameraintegrator.ImageCallback;
 import com.himanshu.cameraintegrator.ImagesSizes;
 import com.himanshu.cameraintegrator.RequestSource;
@@ -109,6 +110,12 @@ public class CameraIntegrator extends Integrator {
         this.activityReference = activityReference;
     }
 
+    public CameraIntegrator(Fragment fragmentReference) {
+        super(fragmentReference.getContext());
+        this.fragmentReference = fragmentReference;
+        this.activityReference = fragmentReference.getActivity();
+    }
+
     /**
      * Sets Public Directory Name
      *
@@ -128,12 +135,6 @@ public class CameraIntegrator extends Integrator {
      */
     public void setPublicDirectoryName(String publicDirectoryName) {
         this.publicDirectoryName = publicDirectoryName;
-    }
-
-    public CameraIntegrator(Fragment fragmentReference) {
-        super(fragmentReference.getContext());
-        this.fragmentReference = fragmentReference;
-        this.activityReference = fragmentReference.getActivity();
     }
 
     /**
@@ -310,6 +311,9 @@ public class CameraIntegrator extends Integrator {
         imageFormat = savedInstanceState.getString(INTENT_EXTRA_FILE_IMAGE_FORMAT, null);
         imageName = savedInstanceState.getString(INTENT_EXTRA_FILE_IMAGE_NAME, null);
         requiredImageSize = savedInstanceState.getInt(INTENT_EXTRA_FINAL_REQUIRED_SIZE, -1);
+
+        if (imagePath != null)
+            mFile = new File(imagePath);
     }
 
 }
