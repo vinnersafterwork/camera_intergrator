@@ -41,9 +41,11 @@ public class CameraIntegrator extends Integrator {
 
     private static final String INTENT_EXTRA_FILE_COMPLETE_PATH = "complete_path";
     private static final String INTENT_EXTRA_FILE_DIRECTORY_NAME = "camera_image_directory_name";
+    private static final String INTENT_EXTRA_FILE_PUBLIC_DIRECTORY_NAME = "public_directory";
     private static final String INTENT_EXTRA_FILE_IMAGE_NAME = "image_name";
     private static final String INTENT_EXTRA_FILE_IMAGE_FORMAT = "format";
-    private static final String INTENT_EXTRA_FINAL_REQUIRED_SIZE = "camera_required_size";
+    private static final String INTENT_EXTRA_FINAL_REQUIRED_SIZE = "required_size";
+    private static final String INTENT_EXTRA_STORAGE_MODE = "storage_mode";
 
     /**
      * Activity Context
@@ -297,11 +299,17 @@ public class CameraIntegrator extends Integrator {
 
     @Override
     public void saveState(Bundle outState) {
-        outState.putString(INTENT_EXTRA_FILE_COMPLETE_PATH, imagePath);
+
+        if (mFile != null)
+            outState.putString(INTENT_EXTRA_FILE_COMPLETE_PATH, mFile.getAbsolutePath());
+
         outState.putString(INTENT_EXTRA_FILE_DIRECTORY_NAME, imageDirectoryName);
         outState.putString(INTENT_EXTRA_FILE_IMAGE_FORMAT, imageFormat);
         outState.putString(INTENT_EXTRA_FILE_IMAGE_NAME, imageName);
         outState.putInt(INTENT_EXTRA_FINAL_REQUIRED_SIZE, requiredImageSize);
+        outState.putString(INTENT_EXTRA_STORAGE_MODE, storageMode.name());
+        outState.putString(INTENT_EXTRA_FILE_PUBLIC_DIRECTORY_NAME, publicDirectoryName);
+
     }
 
     @Override
@@ -311,6 +319,11 @@ public class CameraIntegrator extends Integrator {
         imageFormat = savedInstanceState.getString(INTENT_EXTRA_FILE_IMAGE_FORMAT, null);
         imageName = savedInstanceState.getString(INTENT_EXTRA_FILE_IMAGE_NAME, null);
         requiredImageSize = savedInstanceState.getInt(INTENT_EXTRA_FINAL_REQUIRED_SIZE, -1);
+        publicDirectoryName = savedInstanceState.getString(INTENT_EXTRA_FILE_PUBLIC_DIRECTORY_NAME);
+
+        String storageModeString = savedInstanceState.getString(INTENT_EXTRA_STORAGE_MODE);
+        if (storageModeString != null)
+            storageMode = StorageMode.valueOf(storageModeString);
 
         if (imagePath != null)
             mFile = new File(imagePath);
