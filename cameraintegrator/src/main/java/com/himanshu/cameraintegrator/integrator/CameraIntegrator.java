@@ -287,14 +287,27 @@ public class CameraIntegrator extends Integrator {
                     Result results = getResults(mFile, requiredSizeImage, RequestSource.SOURCE_CAMERA);
 
                     //Delivering Results back to main thread
-                    taskExecutors.mainThread().execute(() -> resultCallback.onResult(RequestSource.SOURCE_CAMERA, results, null));
+                    taskExecutors.mainThread().execute(() ->
+                    {
+                        resultCallback.onResult(RequestSource.SOURCE_CAMERA, results, null);
+                        removeUsedFields();
+                    });
 
                 } catch (FileNotFoundException e) {
-                    taskExecutors.mainThread().execute(() -> resultCallback.onResult(RequestSource.SOURCE_CAMERA, null, e));
+                    taskExecutors.mainThread().execute(() ->
+                    {
+                        resultCallback.onResult(RequestSource.SOURCE_CAMERA, null, e);
+                        removeUsedFields();
+                    });
                 }
 
             });
         }
+    }
+
+    private void removeUsedFields() {
+        imagePath = null;
+        mFile = null;
     }
 
     @Override
