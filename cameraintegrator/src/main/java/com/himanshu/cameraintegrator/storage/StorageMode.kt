@@ -1,16 +1,16 @@
-package com.himanshu.cameraintegrator.storage;
+package com.himanshu.cameraintegrator.storage
 
-public enum StorageMode {
-
+enum class StorageMode {
     /**
      * Internal cache Storage is the storage which in exclusive to app,
      * file to be stored here cannot be larger than 1 MB,
      * also Android Can remove file present here can be removed without notifying
-     * <p>
+     *
+     *
      * Files present here can be deleted in various events like
-     * <ul>
-     * <li>System is low on storage</li>
-     * </ul>
+     *
+     *  * System is low on storage
+     *
      */
     INTERNAL_CACHE_STORAGE,
 
@@ -24,12 +24,13 @@ public enum StorageMode {
      * External temporary Storage is the storage which in exclusive to app,
      * file to be stored here cannot be larger than 1 MB,
      * also Android Can remove file present here can be removed without notifying
-     * <p>
+     *
+     *
      * Files present here can be deleted in various events like
-     * <ul>
-     * <li>System is low on storage</li>
-     * <li>On Running App Like System Cleaner</li>
-     * </ul>
+     *
+     *  * System is low on storage
+     *  * On Running App Like System Cleaner
+     *
      */
     EXTERNAL_CACHE_STORAGE,
 
