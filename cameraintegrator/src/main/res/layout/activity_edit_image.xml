@@ -28,7 +28,7 @@
 
     <ImageView
             android:id="@+id/imgUndo"
-            android:layout_width="@dimen/top_tool_icon_width"
+            android:layout_width="50dp"
             android:layout_height="wrap_content"
             android:background="@color/semi_black_transparent"
             android:padding="8dp"
@@ -38,7 +38,7 @@
 
     <ImageView
             android:id="@+id/imgRedo"
-            android:layout_width="@dimen/top_tool_icon_width"
+            android:layout_width="50dp"
             android:layout_height="wrap_content"
             android:background="@color/semi_black_transparent"
             android:padding="8dp"
