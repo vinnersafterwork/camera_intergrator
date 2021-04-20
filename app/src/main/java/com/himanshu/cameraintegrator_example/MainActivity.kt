@@ -77,7 +77,7 @@ class MainActivity : AppCompatActivity() {
 
             cameraIntegrator = CameraIntegrator(this)
             //Mandatory
-            cameraIntegrator.storageMode = StorageMode.INTERNAL_FILE_STORAGE
+            cameraIntegrator.setStorageMode(StorageMode.INTERNAL_FILE_STORAGE)
 
             //Optional
             cameraIntegrator.setImageDirectoryName("Humddaa")
@@ -98,7 +98,7 @@ class MainActivity : AppCompatActivity() {
 
             cameraIntegrator = CameraIntegrator(this)
             //Mandatory
-            cameraIntegrator.storageMode = StorageMode.EXTERNAL_CACHE_STORAGE
+            cameraIntegrator.setStorageMode(StorageMode.EXTERNAL_CACHE_STORAGE)
 
             //Optional
             cameraIntegrator.setImageDirectoryName("Hudddmaa")
@@ -118,7 +118,7 @@ class MainActivity : AppCompatActivity() {
 
             cameraIntegrator = CameraIntegrator(this)
             //Mandatory
-            cameraIntegrator.storageMode = (StorageMode.EXTERNAL_FILE_STORAGE)
+            cameraIntegrator.setStorageMode(StorageMode.EXTERNAL_FILE_STORAGE)
 
             //Optional
             cameraIntegrator.setImageDirectoryName("Hudddmaa")
@@ -139,7 +139,8 @@ class MainActivity : AppCompatActivity() {
 
             cameraIntegrator = CameraIntegrator(this)
             //Mandatory
-            cameraIntegrator.storageMode = (StorageMode.EXTERNAL_PUBLIC_STORAGE)
+            cameraIntegrator.setStorageMode(StorageMode.EXTERNAL_PUBLIC_STORAGE)
+
 
             //Optional
             cameraIntegrator.setPublicDirectoryName(Environment.DIRECTORY_DCIM)
@@ -157,7 +158,7 @@ class MainActivity : AppCompatActivity() {
 
             galleryIntegrator = GalleryIntegrator(this)
             galleryIntegrator.setRequiredImageSize(ImagesSizes.OPTIMUM_MEDIUM)
-            galleryIntegrator.storageMode = (StorageMode.INTERNAL_CACHE_STORAGE)
+            galleryIntegrator.setStorageMode(StorageMode.INTERNAL_CACHE_STORAGE)
             galleryIntegrator.setImageDirectoryName("Folder101")
 
             galleryIntegrator.initiateImagePick()
@@ -168,7 +169,7 @@ class MainActivity : AppCompatActivity() {
 
             galleryIntegrator = GalleryIntegrator(this)
             galleryIntegrator.setRequiredImageSize(ImagesSizes.OPTIMUM_MEDIUM)
-            galleryIntegrator.storageMode = (StorageMode.INTERNAL_FILE_STORAGE)
+            galleryIntegrator.setStorageMode(StorageMode.INTERNAL_FILE_STORAGE)
             galleryIntegrator.setImageDirectoryName("Folder101")
 
             galleryIntegrator.initiateImagePick()
@@ -188,7 +189,7 @@ class MainActivity : AppCompatActivity() {
 
             galleryIntegrator = GalleryIntegrator(this)
             galleryIntegrator.setRequiredImageSize(ImagesSizes.OPTIMUM_MEDIUM)
-            galleryIntegrator.storageMode = (StorageMode.EXTERNAL_CACHE_STORAGE)
+            galleryIntegrator.setStorageMode(StorageMode.EXTERNAL_CACHE_STORAGE)
             galleryIntegrator.setImageDirectoryName("Folder101")
 
             galleryIntegrator.initiateImagePick()
@@ -205,7 +206,7 @@ class MainActivity : AppCompatActivity() {
 
             galleryIntegrator = GalleryIntegrator(this)
             galleryIntegrator.setRequiredImageSize(ImagesSizes.OPTIMUM_MEDIUM)
-            galleryIntegrator.storageMode = StorageMode.EXTERNAL_FILE_STORAGE
+            galleryIntegrator.setStorageMode(StorageMode.EXTERNAL_FILE_STORAGE)
             galleryIntegrator.setImageDirectoryName("Folder101")
 
             galleryIntegrator.initiateImagePick()
@@ -224,7 +225,7 @@ class MainActivity : AppCompatActivity() {
 
             galleryIntegrator = GalleryIntegrator(this)
             galleryIntegrator.setRequiredImageSize(ImagesSizes.OPTIMUM_MEDIUM)
-            galleryIntegrator.storageMode = (StorageMode.EXTERNAL_PUBLIC_STORAGE)
+            galleryIntegrator.setStorageMode(StorageMode.EXTERNAL_PUBLIC_STORAGE)
             galleryIntegrator.setPublicDirectoryName(Environment.DIRECTORY_DCIM)
             galleryIntegrator.setImageDirectoryName("Folder101")
 
