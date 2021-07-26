@@ -24,7 +24,7 @@ allprojects {
 Step 2. Add the dependency
 ```
 dependencies {
-	        implementation 'com.github.vinnersafterwork:camera_intergrator:v0.2.3'
+	        implementation 'com.github.vinnersafterwork:camera_intergrator:0.3.3'
 	}
 ```
 
